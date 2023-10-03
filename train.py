@@ -3,7 +3,7 @@
 
 """ train network using pytorch
 
-author baiyu
+author aneesh
 """
 
 import os
@@ -26,24 +26,27 @@ from conf import settings
 from utils import get_network, get_training_dataloader, get_test_dataloader, WarmUpLR, \
     most_recent_folder, most_recent_weights, last_epoch, best_acc_weights
 
+#Training and Evaluation Functions
 def train(epoch):
 
     start = time.time()
-    net.train()
-    for batch_index, (images, labels) in enumerate(cifar100_training_loader):
+    net.train()         #set the model to training mode
+
+    for batch_index, (images, labels) in enumerate(cifar100_training_loader): #begin interating over the data
 
         if args.gpu:
             labels = labels.cuda()
             images = images.cuda()
 
-        optimizer.zero_grad()
-        outputs = net(images)
-        loss = loss_function(outputs, labels)
-        loss.backward()
-        optimizer.step()
+        optimizer.zero_grad()   #clears the gradient of all optimized paramters, calling this function before backpropogation is essential
+        outputs = net(images)   #forward pass
+        loss = loss_function(outputs, labels)  #computes the loss (cross entropy loss)
+        loss.backward()         #backward pass
+        optimizer.step()        #update the model parameters
 
-        n_iter = (epoch - 1) * len(cifar100_training_loader) + batch_index + 1
+        n_iter = (epoch - 1) * len(cifar100_training_loader) + batch_index + 1   #number of iterations = total number of batches processed
 
+        #this step is to log the weights and gradients to tensorboard
         last_layer = list(net.children())[-1]
         for name, para in last_layer.named_parameters():
             if 'weight' in name:
@@ -51,7 +54,7 @@ def train(epoch):
             if 'bias' in name:
                 writer.add_scalar('LastLayerGradients/grad_norm2_bias', para.grad.norm(), n_iter)
 
-        print('Training Epoch: {epoch} [{trained_samples}/{total_samples}]\tLoss: {:0.4f}\tLR: {:0.6f}'.format(
+        print('Training Epoch: {epoch} [{trained_samples}/{total_samples}]\tLoss: {:0.4f}\tLR: {:0.6f}'.format(   #.format matches the placeholder with the correct value
             loss.item(),
             optimizer.param_groups[0]['lr'],
             epoch=epoch,
